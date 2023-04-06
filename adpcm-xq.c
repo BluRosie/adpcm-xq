@@ -222,7 +222,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
     if (!fread (&riff_chunk_header, sizeof (RiffChunkHeader), 1, infile) ||
         strncmp (riff_chunk_header.ckID, "RIFF", 4) ||
         strncmp (riff_chunk_header.formType, "WAVE", 4)) {
-            fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+            fprintf (stderr, "\"%s\" is not a valid .WAV file!  Invalid RIFF Chunk Header.\n", infilename);
             return -1;
     }
 
@@ -231,7 +231,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
     while (1) {
 
         if (!fread (&chunk_header, sizeof (ChunkHeader), 1, infile)) {
-            fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+            fprintf (stderr, "\"%s\" is not a valid .WAV file!  Invalid Chunk Header.\n", infilename);
             return -1;
         }
 
@@ -245,7 +245,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
 
             if (chunk_header.ckSize < 16 || chunk_header.ckSize > sizeof (WaveHeader) ||
                 !fread (&WaveHeader, chunk_header.ckSize, 1, infile)) {
-                    fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+                    fprintf (stderr, "\"%s\" is not a valid .WAV file!  Chunk Header size invalid.\n", infilename);
                     return -1;
             }
 
@@ -281,7 +281,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
                     supported = 0;
 
                 if (WaveHeader.Samples.SamplesPerBlock != (WaveHeader.BlockAlign - WaveHeader.NumChannels * 4) * (WaveHeader.NumChannels ^ 3) + 1) {
-                    fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+                    fprintf (stderr, "\"%s\" is not a valid .WAV file!  IMA-ADPCM SamplesPerBlock != (BlockAlign - NumChannels * 4) * (NumChannels ^ 3) + 1\n", infilename);
                     return -1;
                 }
             }
@@ -317,7 +317,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
         else if (!strncmp (chunk_header.ckID, "fact", 4)) {
 
             if (chunk_header.ckSize < 4 || !fread (&fact_samples, sizeof (fact_samples), 1, infile)) {
-                fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+                fprintf (stderr, "\"%s\" is not a valid .WAV file!  \"fact\" Chunk Header ckID doesn't have fact_samples defined.\n", infilename);
                 return -1;
             }
 
@@ -329,7 +329,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
 
                 while (bytes_to_skip--)
                     if (!fread (&dummy, 1, 1, infile)) {
-                        fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+                        fprintf (stderr, "\"%s\" is not a valid .WAV file!  defined skipped bytes (chunk_header ckSize - 4) don't all exist.\n", infilename);
                         return -1;
                     }
             }
@@ -339,7 +339,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
             // on the data chunk, get size and exit parsing loop
 
             if (!WaveHeader.NumChannels) {      // make sure we saw a "fmt" chunk...
-                fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+                fprintf (stderr, "\"%s\" is not a valid .WAV file!  NumChannels = 0\n", infilename);
                 return -1;
             }
 
@@ -350,7 +350,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
 
             if (format == WAVE_FORMAT_PCM) {
                 if (chunk_header.ckSize % WaveHeader.BlockAlign) {
-                    fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+                    fprintf (stderr, "\"%s\" is not a valid .WAV file!  chunk_header.ckSize % WaveHeader.BlockAlign != 0 (%d %% %d == %d)\n", infilename, chunk_header.ckSize, WaveHeader.BlockAlign, chunk_header.ckSize % WaveHeader.BlockAlign);
                     return -1;
                 }
 
@@ -365,7 +365,7 @@ static int adpcm_converter (char *infilename, char *outfilename, int flags, int 
 
                 if (leftover_bytes) {
                     if (leftover_bytes % (WaveHeader.NumChannels * 4)) {
-                        fprintf (stderr, "\"%s\" is not a valid .WAV file!\n", infilename);
+                        fprintf (stderr, "\"%s\" is not a valid .WAV file!  leftover_bytes (chunk_header.ckSize %% WaveHeader.BlockAlign != 0) % NumChannels*4 != 0.\n%d %% %d = %d\n", infilename, leftover_bytes, WaveHeader.NumChannels, leftover_bytes % (WaveHeader.NumChannels * 4));
                         return -1;
                     }
                     if (verbosity > 0) fprintf (stderr, "data chunk has %d bytes left over for final ADPCM block\n", leftover_bytes);
