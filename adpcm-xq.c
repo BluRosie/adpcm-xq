@@ -666,7 +666,7 @@ static int adpcm_encode_data (FILE *infile, FILE *outfile, int num_channels, uin
         }
 
         if (!fread (pcm_block, this_block_pcm_samples * num_channels * 2, 1, infile)) {
-            fprintf (stderr, "\rcould not read all audio data from input file!\n");
+            fprintf (stderr, "\rcould not read all audio data from input file!  this_block_pcm_samples = %d, num_channels = %d\n", this_block_pcm_samples, num_channels);
             return -1;
         }
 
